@@ -48,8 +48,8 @@ impl std::fmt::Display for AccountId {
     }
 }
 
-/// The network behind an account. `Line` is reserved: ZapFast ships no LINE
-/// adapter, and the variant only names the network a future one would use.
+/// The network behind an account. `Line` is a LINE Official Account (a bot)
+/// over the Messaging API; personal LINE accounts are not supported.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum NetworkKind {
@@ -80,8 +80,7 @@ impl NetworkKind {
         }
     }
 
-    /// Whether ZapFast ships an adapter for this network. Line stays a
-    /// reserved name with no adapter.
+    /// Whether ZapFast ships an adapter for this network.
     pub fn supported(self) -> bool {
         matches!(
             self,
@@ -93,6 +92,7 @@ impl NetworkKind {
                 | Self::DiscordBot
                 | Self::X
                 | Self::DeltaChat
+                | Self::Line
         )
     }
 }
@@ -169,6 +169,16 @@ impl Account {
             id,
             kind: NetworkKind::DeltaChat,
             name: NetworkKind::DeltaChat.label().to_owned(),
+        }
+    }
+
+    /// A LINE Official Account (a bot) the user is about to connect. The
+    /// window caches what the webhook delivers in the account directory.
+    pub fn line(id: AccountId) -> Self {
+        Self {
+            id,
+            kind: NetworkKind::Line,
+            name: NetworkKind::Line.label().to_owned(),
         }
     }
 

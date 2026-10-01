@@ -875,6 +875,26 @@ itself. Mail to contacts who do not use Delta Chat arrives as ordinary email
 and is shown as text. Reactions, edits, typing notices, read receipts, and
 search are not wired to this account yet.
 
+### LINE
+
+A LINE account here is a LINE Official Account, meaning a bot; personal LINE
+accounts are not supported. Create a Messaging API channel in the LINE
+Developers console for your own Official Account and paste its channel access
+token and channel secret into the switcher. Both are kept in the OS keyring.
+
+The Messaging API has no socket, so LINE posts new messages to a webhook that
+must be reachable over HTTPS. Point the channel's webhook URL at an address of
+yours and forward it to this computer: the window listens on `127.0.0.1` port
+8460, and each account gets the next port. Set `ZAPFAST_LINE_WEBHOOK_PORT` to
+choose one yourself. Because the API offers no chat list and no history
+endpoint, chats appear as their first message arrives, and each chat keeps its
+most recent messages in a local cache.
+
+Text can be sent. Images, video, audio, and files can be received and
+downloaded; sending them is not wired, because that needs a public HTTPS URL
+for the file. Stickers, emoji reactions, edits, deletions, typing notices, read
+receipts, and search have no support in this API and are not shown.
+
 ## Files
 
 | What | Linux | Notes |
@@ -887,6 +907,8 @@ search are not wired to this account yet.
 | Slack tokens | OS keyring | The app-level token and bot token; no Slack state is kept on disk |
 | Zulip credentials | OS keyring | The server, email, and API key; no Zulip state is kept on disk |
 | Delta Chat mail | `~/.local/state/zapfast/accounts/<id>/delta/` | The mail account database kept by the `deltachat-rpc-server` sidecar; deleting it removes that account's messages and signs it out |
+| LINE tokens | OS keyring | The Messaging API channel access token and channel secret |
+| LINE cache | `~/.local/state/zapfast/accounts/<id>/line/store.json` | The chats and most recent messages seen through the webhook; deleting it forgets them |
 | Messages | `~/.local/state/zapfast/accounts/1/archive.db` | SQLCipher-encrypted SQLite, unlocked by the OS keyring; raw messages retain attachment keys |
 | Attachments, avatars | `~/.cache/zapfast/` | Safe to delete; **Settings > Files > Change…** sends new downloads to another folder, leaving earlier ones in place |
 | Favorite stickers and packs | `~/.local/state/zapfast/stickers/` | Plain WebP files; each pack is a folder |
