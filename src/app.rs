@@ -628,6 +628,10 @@ pub struct App {
     /// server keeps the mail account; the password is never stored here.
     pub delta_addr: String,
     pub delta_password: String,
+    /// LINE sign-in fields, kept only while the card is showing; both go to
+    /// the OS keyring once they work.
+    pub line_token: String,
+    pub line_secret: String,
     pub sidebar_visible: bool,
     pub show_archived: bool,
     /// Chat-list filter; applies to the main list, not to search or the archive.
@@ -1133,6 +1137,8 @@ impl App {
             discord_token: String::new(),
             delta_addr: String::new(),
             delta_password: String::new(),
+            line_token: String::new(),
+            line_secret: String::new(),
             sidebar_visible: true,
             show_archived: false,
             chat_filter: ChatFilter::All,
@@ -1282,7 +1288,7 @@ impl App {
     }
 
     /// Sends a desktop notification for an unseen incoming message.
-    fn maybe_notify(&mut self, chat_id: &str, message: &Message) {
+    fn maybe_notify(&mut self, chat_id: &ChatId, message: &Message) {
         if !self.settings.notifications {
             return;
         }
@@ -1296,7 +1302,7 @@ impl App {
         let reading = !self.window_hidden
             && self.window_focused
             && self.page == Page::Chats
-            && self.open_chat.as_deref() == Some(chat_id);
+            && self.open_chat.as_ref() == Some(chat_id);
         if reading {
             return;
         }
@@ -1326,7 +1332,7 @@ impl App {
             picture,
             sound,
             crate::notify::NotificationTarget {
-                chat: ChatId::whatsapp(chat_id),
+                chat: chat_id.clone(),
                 message: message.id.clone(),
             },
             std::sync::Arc::clone(&self.notification_opens),
@@ -1340,7 +1346,7 @@ impl App {
     /// the mention sound would tell who wrote, so only the message sound
     /// plays, still silent for groups when group sounds are off. The click
     /// target stays inside ZapFast: it opens the message once unlocked.
-    fn notify_while_locked(&mut self, chat_id: &str, is_group: bool, message: &str) {
+    fn notify_while_locked(&mut self, chat_id: &ChatId, is_group: bool, message: &str) {
         let (title, body) = crate::notify::locked_lines(self.locale);
         let sound = notification_sound(&self.settings, None, is_group, false);
         let waker = self.waker.clone();
@@ -1350,7 +1356,7 @@ impl App {
             None,
             sound,
             crate::notify::NotificationTarget {
-                chat: ChatId::whatsapp(chat_id),
+                chat: chat_id.clone(),
                 message: message.to_owned(),
             },
             std::sync::Arc::clone(&self.notification_opens),
@@ -2317,7 +2323,15 @@ impl App {
                             .collect();
                     }
                 }
-                Event::Incoming { chat, message } => self.maybe_notify(&chat, &message),
+                Event::Incoming { chat, message } => {
+                    let message = *message;
+                    // The open conversation shows the message at once; the
+                    // notification follows the same path as before.
+                    if let Some(conversation) = self.conversations.get_mut(&chat) {
+                        conversation.merge(vec![message.clone()], false);
+                    }
+                    self.maybe_notify(&chat, &message);
+                }
                 Event::Picked { chat, paths } => {
                     if self.open_chat.as_deref() == Some(chat.as_str()) {
                         self.stage_files(paths);
@@ -11013,13 +11027,13 @@ mod app_lock_tests {
         let mut app = unlocked_app();
         let message = incoming(&mut app);
         app.chats[0].notification_sound = Some(crate::settings::NotificationSound::Alert);
-        app.maybe_notify(CHAT, &message);
+        app.maybe_notify(&ChatId::whatsapp(CHAT), &message);
         let shown = app.notifications.shown.last().unwrap().clone();
         assert_eq!(shown.title, "Ada Lovelace");
         assert_eq!(shown.body, "the engine is ready");
 
         app.lock_app();
-        app.maybe_notify(CHAT, &message);
+        app.maybe_notify(&ChatId::whatsapp(CHAT), &message);
         let shown = app.notifications.shown.last().unwrap();
         assert_eq!(shown.title, "ZapFast");
         assert_eq!(shown.body, "New message");

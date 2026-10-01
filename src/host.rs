@@ -92,6 +92,9 @@ impl Host {
             crate::account::NetworkKind::DeltaChat => {
                 Account::delta(crate::account::next_id(&self.accounts))
             }
+            crate::account::NetworkKind::Line => {
+                Account::line(crate::account::next_id(&self.accounts))
+            }
             _ => return None,
         };
         self.accounts.push(account.clone());

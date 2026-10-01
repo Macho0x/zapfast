@@ -158,6 +158,7 @@ async fn serve(
                 LoginStep::DiscordToken { .. } => {}
                 LoginStep::XConnect => {}
                 LoginStep::DeltaCredentials { .. } => {}
+                LoginStep::LineTokens { .. } => {}
             },
             _ => {}
         }

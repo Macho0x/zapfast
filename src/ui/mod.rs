@@ -98,6 +98,7 @@ pub fn show(app: &mut App, ui: &mut egui::Ui) {
                         Some(crate::account::NetworkKind::DiscordBot) => login::discord(app, ui),
                         Some(crate::account::NetworkKind::X) => login::x(app, ui),
                         Some(crate::account::NetworkKind::DeltaChat) => login::delta(app, ui),
+                        Some(crate::account::NetworkKind::Line) => login::line(app, ui),
                         _ => login::telegram(app, ui),
                     }
                 } else {

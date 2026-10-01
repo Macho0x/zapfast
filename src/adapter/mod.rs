@@ -4,6 +4,7 @@
 
 pub mod delta;
 pub mod discord;
+pub mod line;
 pub mod matrix;
 pub mod slack;
 pub mod telegram;
